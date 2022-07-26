@@ -200,3 +200,434 @@ Core = The basic computational unit of CPU
 Multicore = Having multiple cores on the same CPU
 Multiprocessor = Having multiple processors
 ```
+
+# x86_64 assembly
+
+## Before getting started
+
+### Installing the required tools
+
+- Installing the required tools
+
+```sh
+sudo apt install build-essential clang nasm gdb gdbserver
+```
+
+- A text editor, I personally use [neovim](https://neovim.io/)
+- A virtual machine (x86_64)
+
+### Understanding how does a program looks like in the memory
+
+Read more about this here: [link](https://s4dr0t1.github.io/docs/programming/pl-basics)
+
+```
+		┌───────┐
+		│ Stack │ Grows downwards
+		│   │   │ Contains things that are local
+		│   │   │ to a function (local variables,
+		│   ▼   │ return addresses, parameters etc)
+		├───────┤
+		│ Heap  │ Dynamic memory allocation takes place
+		├───────┤
+		│ Data  │ Initialized global/static variables
+		├───────┤
+		│ BSS   │ Contains uninitialized data
+		├───────┤
+		│ Text  │ Contains our program code
+		└───────┘
+```
+### Looking at the process memory map
+
+```sh
+# Using gdb 
+$ gdb -q ./binary
+$ break <breakPoint>
+$ run
+$ info proc mappings
+
+# Using pmap
+pmap <processID>
+```
+
+### The boilerplate code
+```nasm
+;;The start symbol, during the start of the execution, the execution flow will jump to the address pointed to, by the label _start
+global _start
+
+section .text
+	;;The executable code goes here
+
+
+section .data
+	;;Initialized data goes here
+
+
+section .bss
+	;;Uninitialized data goes here
+```
+
+### Compiling and running the code
+
+- Read more about assembly, linking and such stuff [here](https://s4dr0t1.github.io/docs/programming/pl-basics)
+- Read more about position independent code [here](https://en.wikipedia.org/wiki/Position-independent_code)
+
+```sh
+# Assembly the code
+$ nasm ./code.asm -f elf64 -o output.o
+
+# Linking
+$ ld output.o -o finalExecutable #Use the -pie flag to get position independent code
+$ ./finalExecutable
+```
+
+
+## Basics
+
+### Fundamental data types
+
+Name | Size | Instruction
+-|-|-
+Byte | 8 bits | `db`
+Word | 16 bits | `dw`
+Double Word | 16 * 2 bits | `dd`
+Quad Word | 16 * 4 bits | `dq`
+Double Quad Word | 16 * 8 bits | `ddq`
+
+### Declaring initialized data
+
+```nasm
+;;Defining the byte 0x23
+db 0x23
+
+;;Defining two bytes successive in memory 0x12, 0x34, 0x56
+db 0x12, 0x34, 0x56
+
+;;Defining a character constant and a byte
+db 'x', 0x00
+
+;;Defining a string constant and a byte in succession
+db 'hi', 0x10
+
+;;Defining a word (2 bytes, 16 bits)
+dw 0x1234 ; 0x34 0x12 (little-endian)
+dw 'a'    ; 0x61 0x00
+dw 'ab'   ; 0x61 0x62
+
+;;Defining a double word (32 bits, 4 bytes)
+dd 0x12345678   ; 0x12 0x34 0x56 0x78
+
+;;Defining a Quad Word (64 bits, 8 bytes)
+dq 0x123456789abcdef0
+```
+
+### Declaring un-initialized data
+
+Uninitialized data is stored in the `.BSS` section, and since they're un-initialized in nature, no memory needs to be allocated for their storage, and they can just exist inside the object file.
+
+```nasm
+;;Reserve a byte
+section .bss
+label: resb <numberOfBytes> ;;the label will point to the first byte
+
+;;Reserve a word
+section .bss
+	label: resw <numberOfWords> ;;the laebl will point to the first byte
+```
+
+## The instruction set
+
+### Moving data around
+
+If we’re moving 64-bit data into a 64-bit register, the data will occupy the whole register. But when the data is of 32-bits, the lower 32-bits will be occupied by the data and the rest will be zeroed out. When dealing with 8 or 16-bit operands, the other bits will not be modified.
+
+#### `MOV` instruction
+
+```nasm
+;;B/w registers
+mov registerA, registerB
+
+;;Memory to registers
+mov RAX, qword [memoryAddress]
+mov EAX, dword [memoryAddress]
+mov AX, word [memoryAddress]
+mov AL, byte [memoryAddress]
+
+;;Register to Memory
+mov byte [memoryAddress], AL
+mov dword [memoryAddress], EAX
+
+;;Immediate data to register
+mov AX, 0x1234
+
+;;Immediate data to Memory
+mov byte [label], 0x99
+```
+
+#### `LEA` (Load Effective Address) 
+
+Used to load pointer values
+
+```nasm
+lea RAX, [sample] ;;RAX will point to the memory region of sample
+lea RBX, [RAX]    ;;moving the contents of the location RAX is pointing to, into RBX
+```
+
+#### Exchange instruction
+The values present in the two mentioned entities get exchanged.
+
+```nasm
+XCHG registerA, registerB
+XCHG memory, register
+XCHG register, memory
+```
+
+### Arithmetic and Logical Instructions
+
+#### Addition
+
+```nasm
+ADD registerA, registerB
+ADD register, memory
+ADD register, immediateData
+
+;;Add with carry 
+ADC registerA, registerB
+;;registerA += registerB + 1 (If carry bit is set)
+;;kregisterA += registerB + 0 (If carry bit is not set)
+
+ADC register, immediateData
+ADC register, [memoryAddress]
+```
+
+#### Subtraction
+
+```nasm
+SUB registerA, registerB
+SUB register, memory
+SUB register, immediateData
+
+;;Subtract with carry
+SBB registerA, registerB
+;;registerA += registerB + 1 (If carry bit is set)
+;;kregisterA += registerB + 0 (If carry bit is not set)
+
+SBB register, immediateData
+SBB register, [memoryAddress]
+```
+
+
+#### Increment/ Decrement
+
+```nasm
+inc <register>
+inc [memoryAddress]
+
+dec <register>
+dec [memoryAddress]
+
+```
+
+#### Division
+
+- Implied + indirect addressing is followed viz. a/b, the a will always be the RAX register, and b can be any register
+- The quotient will be stored in RAX, and the remainder will be stored in RDX
+
+```nasm
+div <register>
+```
+
+#### Multiplication
+
+- The first operand must always be present in RAX
+- The second operand can be put into any register
+
+```nasm
+mul <register> ;;RAX = RAX * register
+```
+
+### Logical Operations
+
+#### NOT operation
+
+```nasm
+not <register>
+not <memoryAddress>
+```
+
+#### AND operation
+
+```nasm
+and <registerA>, <registerB>
+and <register>, <memoryLocation>
+```
+
+#### OR operation
+
+```nasm
+or <registerA>, <registerB>
+or <register>, <memoryLocation>
+```
+
+
+#### XOR operation
+
+```nasm
+xor <registerA>, <registerB> 
+xor <register>, <memoryLocation> 
+xor <memoryLocation>, <register>
+```
+
+## More advanced concepts
+
+### Loops
+
+- ECX register is used as the counter register, and it gets decremented each time the loop executes, as soon as it reaches 0, the iteration stops.
+- Looping is not as simple as how its done in HLLS, there’s an inherent logic involved, one really needs to go through each instruction step by step and track all the registers to understand the instruction (in gdb)
+
+```nasm
+;;1. Indentation doesn't matter in ASM, it's only for readability sake
+;;2. Our process has something called fetch-decode-execute cycle, and it keeps executing instruction in sequence (if no branching)
+global _start
+section .text
+        _start:
+                mov RAX, 0x1 ;;Some data
+                mov RCX, 0x3 ;;How many times to iterate
+                someLabel:
+                        ADD RAX, 0x1
+                loop someLabel
+                mov RAX, 0x10
+```
+- 1 gets moved into the RAX
+- 0x3 gets moved into RCX
+- `ADD RAX, 0x1` is executed for the first time
+- loop someLabel is executed, and the value of RCX is decremented by 1
+- Since the counter register is not equal to 0, the execution flow will jump to where the label `someLabel` is pointing to
+- ADD RAX, 0x1 is executed accordingly, until the value of RCX becomes 0
+- After the value of RCX reaches 0, the next instruction is executed
+
+### Jumps
+
+These instructions can be categorised into two types: Conditional jumps and unconditional jumps
+
+#### Unconditional jumps
+
+- No conditions are checked, and the execution flow is shifted to the location specified
+- Memory address can be specified via either some register, or some other means
+
+```nasm
+jmp <memoryLocation>
+```
+
+#### Conditional jumps
+- There are a lot of different conditional jumps statements
+- The first letter is a J, followed by two other letters based on some condition, viz. Jxx
+- The conditions are decided based on the flag registers
+
+```nasm
+conditionLoopInstruction <label>
+```
+
+There are a lot of instructions for conditional jumps, but what is common in all of them is they start with a `J` and rest letters are based on some condition. 
+
+Here is a reference (taken from the Intel's manual)
+
+![Conditional jumps](./images/unconditional-jumps.png)
+
+### Procedures
+
+#### Basics
+
+- Similar to functions in C or other HLLs, and in nasm, procedures are defined using labels, and called using the call instruction.
+- - When the program is fresh in memory, the stack is mostly empty, it has stuff like `argc`, the environment variables table (pointer variables and the location they point to viz. the actual environment variables), and the command line arguments table (the pointer variables and the location they point to, viz. the actual command line arguments stored onto the stack).
+- Command line arguments can be passed to a procedure with the help of registers, stack, or passed the address of data structure present in the memory
+
+```nasm
+procedureLabel:
+	;;intstructions
+	ret
+
+
+call procedureLabel
+```
+
+#### Anatomy of a `CALL` instruction
+
+When a sub-procedure is called using `call`, the value of `RIP` is changed to the where the procedureLabel is pointing to and the address of the next instruction (beneath the `call` instruction) is pushed onto the stack
+
+#### Anatomy of a `RET` instruction
+When `ret` is executed, the address of the next instruction which was present on the stack gets popped and is pointed to, by `RIP` viz. the execution flow redirects back to the next instruction which was beneath the call instruction
+
+```
+                    Address       Instruction
+                    ┌─────┬──────────────────────┐
+                    │     │   procedureLabel:    │
+                    │  1  │         mov RAX, RBX │
+                    │  2  │         ret          │
+                    │     │                      │
+                    │     │                      │
+                    │  3  │   call procedureLabel│
+                    │  4  │   xor RAX, RAX       │
+    Stack           └─────┴──────────────────────┘       Stack
+┌────────────┐                                        ┌─────────────┐
+│            │ ◄──────RSP                             │      4      │
+├────────────┤                                        ├─────────────┤
+│            │            During the execution of     │             │◄──────RSP
+├────────────┤            ───────────────────────►    ├─────────────┤
+│            │              call procedureLabel       │             │    RIP
+├────────────┤                                        ├─────────────┤  ┌─────┐
+│            │      EIP                               │             │  │  4  │
+├────────────┤    ┌─────┐                             ├─────────────┤  └─────┘
+│            │    │  3  │                             │             │
+├────────────┤    └─────┘                             ├─────────────┤
+│            │                                        │             │
+├────────────┤                  Execution of ret      ├─────────────┤
+│            │                  ┌───────────────      │             │
+└────────────┘                  │ pop RIP (kind of)   └─────────────┘
+                                │
+                                │
+                                │
+                                ▼
+              Stack
+           ┌────────────┐
+           │            │
+           ├────────────┤
+           │            │
+           ├────────────┤
+           │            │
+           ├────────────┤        RIP
+           │            │      ┌─────┐
+           ├────────────┤      │  5  │
+           │            │      └─────┘
+           ├────────────┤
+           │            │
+           ├────────────┤
+           │            │
+           └────────────┘
+```
+
+### Stack Frames
+
+- Whenever a procedure is called, a stack frame is created on the stack which is like a theoretical wall, to isolate all data created by previous procedures, when the procedure ends, the theoretical wall is destroyed.
+- - Two registers are used to maintain the theoretical wall viz. `RSP` (top of the stack) and `RBP` (base of the stack)
+- When a sub-procedure is called, the current `RBP` is pushed onto the stack, and `RBP` gets the same value as that of the RSP (the base address of the wall will start building from here)
+- At the very end of a sub-procedure, `leave` and `ret` instructions are there, `leave` does the opposite of the thing mentioned above, and `ret` is used to change the `RIP` to the next instruction of the caller.
+- After using Stack frames, we can do whatever we please with the stack and all the previous data will still get preserved
+
+
+```nasm
+procedureLabel:
+	;;Function prologue
+	push RBP
+	mov RBP, RSP
+
+	;;Instructions
+
+	;;Function epilogie
+	mov RSP, RBP ;;ignore everything that was above the current RBP (in the container) which can be re-written
+	pop RBP
+
+
+call procedureLabel
+```
+
+![Understanding stack frames](./images/stack-frame.png)
