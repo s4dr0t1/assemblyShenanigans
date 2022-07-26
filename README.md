@@ -20,6 +20,29 @@ My attempt to teach others about microprocessors and programming in IA-32 and IA
 		- [What does 32 and 64 bit actually mean?](#what-does-32-bit%2C-64-bit-etc-actually-mean)
 	- [Micro-processor, micro-controller, and micro-computer](#micro-processor%2C-micro-controller%2C-and-micro-computer)
 	- [Difference b/w CPU, Processor and Core](#difference-b%2Fw-cpu%2C-processor-and-core)
+- [x86_64 Assembly](#x86_64-assembly)
+	- [Getting started](#getting-started)
+		- [Installation](#installing-the-required-tools)
+		- [Understanding process memory maps](#understanding-how-does-a-program-looks-like-in-the-memory)
+		- [Looking at memory maps](#looking-at-the-process-memory-map)
+		- [The boilerplate code](#the-boilerplate-code)
+		- [Compiling and running our code](#compiling-and-running-the-code)
+	- [Basics](#basics-of-assembly)
+		- [Fundamental Data Types](#fundamental-data-types)
+		- [Declaring initialized data](#declaring-initialized-data)
+		- [Declaring uninitialized data](#declaring-un-initialized-data)
+	- [The instruction set](#the-instruction-set)
+		- [Moving data around](#moving-data-around)
+		- [Arithmetic operations](#arithmetic-and-logical-instructions)
+		- [Logical operations](#logical-operations)
+	- [More advanced concepts](#more-advanced-concepts)
+		- [Loops](#loops)
+		- [Jumps](#jumps)
+		- [Procedures](#procedures)
+			- [Basics](#understanding-procedures)
+			- [Anatomy of a CALL instruction](#anatomy-of-a-call-instruction)
+			- [Anatomy of a RET instruction](#anatomy-of-a-ret-instruction)
+			- [Stack Frames](#stack-frames)
 
 # Pre-requisites
 
@@ -203,7 +226,7 @@ Multiprocessor = Having multiple processors
 
 # x86_64 assembly
 
-## Before getting started
+## Getting started
 
 ### Installing the required tools
 
@@ -214,7 +237,7 @@ sudo apt install build-essential clang nasm gdb gdbserver
 ```
 
 - A text editor, I personally use [neovim](https://neovim.io/)
-- A virtual machine (x86_64)
+- A guest OS (x86_64)
 
 ### Understanding how does a program looks like in the memory
 
@@ -281,7 +304,7 @@ $ ./finalExecutable
 ```
 
 
-## Basics
+## Basics of assembly
 
 ### Fundamental data types
 
@@ -535,10 +558,10 @@ Here is a reference (taken from the Intel's manual)
 
 ### Procedures
 
-#### Basics
+#### Understanding procedures
 
 - Similar to functions in C or other HLLs, and in nasm, procedures are defined using labels, and called using the call instruction.
-- - When the program is fresh in memory, the stack is mostly empty, it has stuff like `argc`, the environment variables table (pointer variables and the location they point to viz. the actual environment variables), and the command line arguments table (the pointer variables and the location they point to, viz. the actual command line arguments stored onto the stack).
+- When the program is fresh in memory, the stack is mostly empty, it has stuff like `argc`, the environment variables table (pointer variables and the location they point to viz. the actual environment variables), and the command line arguments table (the pointer variables and the location they point to, viz. the actual command line arguments stored onto the stack).
 - Command line arguments can be passed to a procedure with the help of registers, stack, or passed the address of data structure present in the memory
 
 ```nasm
@@ -605,10 +628,10 @@ When `ret` is executed, the address of the next instruction which was present on
            └────────────┘
 ```
 
-### Stack Frames
+#### Stack Frames
 
 - Whenever a procedure is called, a stack frame is created on the stack which is like a theoretical wall, to isolate all data created by previous procedures, when the procedure ends, the theoretical wall is destroyed.
-- - Two registers are used to maintain the theoretical wall viz. `RSP` (top of the stack) and `RBP` (base of the stack)
+- Two registers are used to maintain the theoretical wall viz. `RSP` (top of the stack) and `RBP` (base of the stack)
 - When a sub-procedure is called, the current `RBP` is pushed onto the stack, and `RBP` gets the same value as that of the RSP (the base address of the wall will start building from here)
 - At the very end of a sub-procedure, `leave` and `ret` instructions are there, `leave` does the opposite of the thing mentioned above, and `ret` is used to change the `RIP` to the next instruction of the caller.
 - After using Stack frames, we can do whatever we please with the stack and all the previous data will still get preserved
