@@ -17,7 +17,7 @@ My attempt to teach others about microprocessors and programming in IA-32 and IA
 		- [Basics](#basics)
 		- [Approaches to ISA on the basis of architectural complexity](#approaches-to-isa-on-the-basis-of-architectural-complexity)
 		- [Microarchitecture](#microarchitecture)
-		- [What does 32 and 64 bit actually mean?](#what-does-32-bit%2C-64-bit-etc-actually-mean)
+		- [What does 32 and 64 bit actually mean?](#what-does-32-bit-and-64-bit-etc-actually-mean)
 	- [Micro-processor, micro-controller, and micro-computer](#micro-processor%2C-micro-controller%2C-and-micro-computer)
 	- [Difference b/w CPU, Processor and Core](#difference-b%2Fw-cpu%2C-processor-and-core)
 - [x86_64 Assembly](#x86_64-assembly)
@@ -33,7 +33,7 @@ My attempt to teach others about microprocessors and programming in IA-32 and IA
 		- [Declaring uninitialized data](#declaring-un-initialized-data)
 	- [The instruction set](#the-instruction-set)
 		- [Moving data around](#moving-data-around)
-		- [Arithmetic operations](#arithmetic-and-logical-instructions)
+		- [Arithmetic operations](#arithmetic-operations)
 		- [Logical operations](#logical-operations)
 	- [More advanced concepts](#more-advanced-concepts)
 		- [Loops](#loops)
@@ -199,7 +199,7 @@ Some other approaches are: Minimal Instruction Set Computer (MISC), One Instruct
 
 Micro-architecture is how the instruction set is implemented. There are multiple micro-architecture that support the same ISA, such as such as both Intel and AMD support the x86 ISA, but they have different implementation (micro-architecture)
 
-### What does 32-bit, 64-bit etc actually mean
+### What does 32-bit and 64-bit etc actually mean
 
 - Used to define the native word-size of the ISA, and that is what the CPU processes at once viz. if the word size is 1 byte, 1 byte of data can be processed in a single fetch-decode-execute cycle
 - If there are 8-data lines as per the ISA, it means 8-bits can be transferred simultaneously at once, viz. the each distinct register can store 8 bits each, thus the CPU is 8-bit in nature. The address bus is irrelevant with classification of CPUs.
@@ -404,7 +404,7 @@ XCHG memory, register
 XCHG register, memory
 ```
 
-### Arithmetic and Logical Instructions
+### Arithmetic Operations
 
 #### Addition
 
