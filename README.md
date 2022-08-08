@@ -43,6 +43,7 @@ My attempt to teach others about microprocessors and programming in IA-32 and IA
 			- [Anatomy of a CALL instruction](#anatomy-of-a-call-instruction)
 			- [Anatomy of a RET instruction](#anatomy-of-a-ret-instruction)
 			- [Stack Frames](#stack-frames)
+	- [Resources](#resources)
 
 # Pre-requisites
 
@@ -654,3 +655,12 @@ call procedureLabel
 ```
 
 ![Understanding stack frames](./images/stack-frame.png)
+
+### Resources
+
+- pwn.college [Assembly](https://dojo.pwn.college/challenges/asm) and [Shellcoding](https://dojo.pwn.college/challenges/shellcode) modules
+- Ryan Chapman's system call table for x86_64 Linux systems: [Link](https://blog.rchapman.org/posts/Linux_System_Call_Table_for_x86_64/)
+- Intel Architecture software development manuals: [Link](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html)
+- x86 opcode reference: [Link](https://ref.x86asm.net/)
+- repl.it, but for Assembly: [Link](https://github.com/yrp604/rappel)
+- NAND2TETRIS: [Link](https://www.nand2tetris.org/)
